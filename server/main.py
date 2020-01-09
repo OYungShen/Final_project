@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 import torchvision.transforms as transforms
 from torch.autograd import Variable
-from pytorch_model import CNN
+from ResModel import RES
 import json
 from io import BytesIO
 from base64 import b64decode
@@ -23,18 +23,18 @@ app = Flask(__name__)
 @app.route("/Captcha", methods=['POST'])
 def get_frame():
     device = torch.device( "cpu")
-    cnn = CNN().to(device)
-    cnn.eval()
-    cnn.load_state_dict(torch.load('./model_trans_2.pkl', map_location=torch.device('cpu')))
-    cnn.to(device)
+    res_CNN = RES().to(device)
+    res_CNN.eval()
+    res_CNN.load_state_dict(torch.load('./res_direct.pkl', map_location=torch.device('cpu')))
+    res_CNN.to(device)
     LETTERSTR = "2346789abcdefghjklmnpqrtuxyz"
 
-    res = json.loads(request.data.decode('utf-8')) 
+    res = json.loads(request.data.decode('utf-8'))  # 获取推过来的json，也可以用data然后转换成json
     image_data = BytesIO(b64decode(res["Captcha"]))
     img = Image.open(image_data)
     
     vimage = Variable(transforms.ToTensor()(img).unsqueeze(0)).to(device)
-    out1,out2,out3,out4,out5 = cnn(vimage)
+    out1,out2,out3,out4,out5 = res_CNN(vimage)
 
     c0 = LETTERSTR[torch.max(out1, 1)[1]]
     c1 = LETTERSTR[torch.max(out2, 1)[1]]
